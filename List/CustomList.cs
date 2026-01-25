@@ -7,30 +7,40 @@ using System.Threading.Tasks;
 
 namespace Data_Structures.List
 {
-    public class CustomList<T> : IEnumerable, IEnumerator
+    public class CustomList<T> : IEnumerable<T>
     {
         private T[] _mainArr;
         private int _count = 0;
         private int _capacity = 0;
         private int _currentIndex = -1;
 
-        public CustomList(int size = 8)
+        public CustomList(int capacity = 8)
         {
-            _mainArr = new T[size];
-            _capacity = size;
+            _mainArr = new T[capacity];
+            _capacity = capacity;
         }
 
-        object IEnumerator.Current => _mainArr[++_currentIndex];
-        IEnumerator IEnumerable.GetEnumerator()
+        public T this[int index]
         {
-            return this;
+            get => _mainArr[index];
+            set => _mainArr[index] = value;
         }
 
-        bool IEnumerator.MoveNext()
+        public T Current => _mainArr[++_currentIndex]!;
+
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        {
+            return (IEnumerator<T>)this;
+        }
+        public IEnumerator GetEnumerator()
+        {
+            return (IEnumerator)this;
+        }
+
+        public bool MoveNext()
         {
             if (_currentIndex < _count)
             {
-                //IncrementCurrentIndex();
                 return true;
             }
             else
@@ -41,7 +51,7 @@ namespace Data_Structures.List
             return false;
         }
 
-        void IEnumerator.Reset()
+        public void Reset()
         {
             _currentIndex = -1;
         }
@@ -66,28 +76,25 @@ namespace Data_Structures.List
 
         public void Remove(T value)
         {
-            T[] newArr = new T[_mainArr.Length - 1];
+            T[] newArr = new T[_capacity];
+           
             int j = 0;
-            bool numberFoundInList = false;
+            bool isItemFoundInList = false;
 
-            for (int i = 0; i < _mainArr.Length; i++)
+            for (int i = 0; i < _capacity; i++)
             {
-                if (_mainArr[i] is not null && !_mainArr[i].Equals(value))
+                if (_mainArr[i] is not null && !_mainArr[i]!.Equals(value) || isItemFoundInList)
                 {
-                    if (j < _mainArr.Length - 1)
-                    {
-                        newArr[j] = _mainArr[i];
-                        j++;
-                    }
+                    newArr[j++] = _mainArr[i];
                 }
                 else
                 {
-                    numberFoundInList = true;
+                    isItemFoundInList = true;
                     _count--;
                 }
             }
 
-            if (numberFoundInList)
+            if (isItemFoundInList)
             {
                 _mainArr = newArr;
             }
@@ -102,10 +109,10 @@ namespace Data_Structures.List
 
         public void RemoveAt(int index)
         {
-            T removableValue = Get(index);
+            T removableValue = _get(index);
             Remove(removableValue);
         }
-        public T Get(int index)
+        private T _get(int index)
         {
             return _mainArr[index];
         }
@@ -116,32 +123,32 @@ namespace Data_Structures.List
             {
                 throw new IndexOutOfRangeException();
             }
-            var newArr = new T[_capacity + 1];
-            int j = 0;
 
-            for (int i = 0; i <= _capacity; i++)
+            T[] newArr = new T[_capacity];
+
+            if (++_count > _capacity)
             {
-                if(i == index)
-                {
-                    continue;
-                }
-
-                newArr[i] = _mainArr[j];
-                j++;
+                newArr = ResizeArray(newArr);
             }
 
-            newArr[index] = value;
+            int j = 0;
+            
+            for (int i = 0; i < _count; i++)
+            {
+                if (i == index)
+                {
+                    newArr[i] = value;
+                }
+
+                else
+                {
+                    newArr[i] = _mainArr[j++];
+                }  
+            }
+
             _mainArr = newArr;
         }
 
-
-        public void Print(CustomList<T> list)
-        {
-            for (int i = 0; i < _mainArr.Length; i++)
-            {
-                Console.WriteLine(list.Get(i));
-            }
-        }
         private T[] ResizeArray(T[] initialArray)
         {
             T[] newArray = new T[initialArray.Length * 2];
@@ -164,5 +171,6 @@ namespace Data_Structures.List
         {
             _currentIndex = -1;
         }
+
     }
 }
