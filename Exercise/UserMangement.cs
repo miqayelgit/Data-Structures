@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using Data_Structures.Models;
 
 namespace Data_Structures.Exercise
 {
@@ -40,7 +43,7 @@ namespace Data_Structures.Exercise
                         isOver = true;
                     }
 
-                    else if (Int32.Parse(answer) == 1)
+                    else if (int.Parse(answer) == 1)
                     {
                         bool isDataCorrect = false;
 
@@ -49,7 +52,7 @@ namespace Data_Structures.Exercise
                             try
                             {
                                 Console.Write("Id: ");
-                                int id = Int32.Parse(Console.ReadLine()!);
+                                int id = int.Parse(Console.ReadLine()!);
 
                                 if (userIds.Contains(id))
                                 {
@@ -64,7 +67,7 @@ namespace Data_Structures.Exercise
                                 string lastName = Console.ReadLine()!;
 
                                 Console.Write("Age: ");
-                                int age = Int32.Parse(Console.ReadLine()!);
+                                int age = int.Parse(Console.ReadLine()!);
 
                                 Console.Write("Email: ");
                                 string email = Console.ReadLine()!;
@@ -91,7 +94,7 @@ namespace Data_Structures.Exercise
                             catch (Exception ex) { Console.WriteLine("Enter correct data!"); }
                         }
                     }
-                    else if (Int32.Parse(answer) == 2)
+                    else if (int.Parse(answer) == 2)
                     {
                         if (users.Count == 0)
                         {
@@ -111,10 +114,10 @@ namespace Data_Structures.Exercise
                         Console.ReadLine();
                     }
 
-                    else if (Int32.Parse(answer) == 3)
+                    else if (int.Parse(answer) == 3)
                     {
                         Console.Write("Id: ");
-                        int id = Int32.Parse(Console.ReadLine()!);
+                        int id = int.Parse(Console.ReadLine()!);
 
                         foreach (var user in users)
                         {
@@ -131,14 +134,152 @@ namespace Data_Structures.Exercise
             }
         }
 
+
         public static void ActionsQueue()
         {
-            List<User> users = new List<User>();
-            Dictionary<User, string> userActions = new Dictionary<User, string>();
-            Dictionary<int, string> actions = new Dictionary<int, string>();
+            Dictionary<User, string> userActions = [];
 
+            List<User> users = GenerateUsers();
+
+            bool isOver = false;
+
+            while (!isOver)
+            {
+                PromptUser();
+
+                string answer = Console.ReadLine()!;
+
+                try
+                {
+                    Console.WriteLine();
+                    if (answer.Equals("Execute"))
+                    {
+                        Execute(users, userActions, userDelegate);
+                        ShowUsers(users);
+
+                        isOver = true;
+                    }
+
+                    else if (int.Parse(answer) == 1)
+                    {
+                        PerformAction(users, userActions, "Soft Delete");
+                    }
+                    else if (int.Parse(answer) == 2)
+                    {
+                        PerformAction(users, userActions, "Hard Delete");
+                    }
+                }
+                catch (Exception ex)
+                { 
+                    Console.WriteLine(ex.Message); 
+                    Console.WriteLine(); 
+                }
+            }
+        }
+
+        private static void PerformAction(List<User> users, Dictionary<User, string> userActions, string actionName)
+        {
+            bool isActionPerformed = false;
+
+            while (!isActionPerformed)
+            {
+                try
+                {
+                    Console.Write("Id: ");
+                    int id = int.Parse(Console.ReadLine()!);
+
+                    if (TryGetUserWithId(users, id, out var user))
+                    {
+                        if (userActions.TryGetValue(user, out var action))
+                        {
+                            Console.WriteLine($"Action already performed: {action}\n");
+                            isActionPerformed = true;
+                            break;
+                        }
+                        userActions.Add(user, actionName);
+                        isActionPerformed = true;
+                        break;
+
+                    }
+
+                    if (!isActionPerformed)
+                    {
+                        Console.WriteLine($"User with given ID {id} not found");
+                        break;
+                    }
+
+                }
+
+                catch (Exception)
+                {
+                    Console.WriteLine("Enter correct data!");
+                }
+            }
+        }
+
+        private static bool TryGetUserWithId(List<User> users, int id, [MaybeNullWhen(false)] out User outUser)
+        {
+            foreach (var user in users)
+            {
+                if (user.Id == id)
+                {
+                    outUser = user;
+                    return true;
+                }
+            }
+            outUser = null;
+            return false;
+        }
+        private static void Execute(List<User> users, Dictionary<User, string> userActions, UserDelegate udelegate)
+        {
+            foreach (var item in userActions)
+            {
+                if (udelegate(item, "Hard Delete"))
+                {
+                    users.Remove(item.Key);
+                }
+
+                else if (udelegate(item, "Soft Delete"))
+                {
+                    item.Key.IsDeleted = true;
+                }
+            }
+        }
+
+        public static void PromptUser()
+        {
+            Dictionary<int, string> actions = new Dictionary<int, string>();
             actions.Add(1, "Soft Delete");
             actions.Add(2, "Hard Delete");
+
+            foreach (var action in actions)
+            {
+                Console.WriteLine(action);
+            }
+
+            Console.Write("\nChoose Action: ");
+        }
+
+        private static void ShowUsers(List<User> users)
+        {
+            if (users.Count == 0)
+            {
+                Console.WriteLine("Users List Is Empty");
+            }
+
+            else
+            {
+                Console.WriteLine("Users List");
+                foreach (var user in users)
+                {
+                    Console.WriteLine(user);
+                }
+                Console.WriteLine();
+            }
+        }
+        public static List<User> GenerateUsers()
+        {
+            List<User> users = new List<User>();
 
             users.Add(new User
             {
@@ -161,122 +302,18 @@ namespace Data_Structures.Exercise
 
             });
 
-            bool isOver = false;
-
-            while (!isOver)
-            {
-                foreach (var action in actions)
-                {
-                    Console.WriteLine(action);
-                }
-
-                Console.Write("\nChoose Action: ");
-
-                string answer = Console.ReadLine()!;
-
-                try
-                {
-                    Console.WriteLine();
-                    if (answer.Equals("Do"))
-                    {
-
-                        DoIt(users, userActions);
-                        ShowUsers(users);
-
-                        isOver = true;
-                    }
-
-                    else if (Int32.Parse(answer) == 1)
-                    {
-                        bool isActionPerformed = false;
-
-                        while (!isActionPerformed)
-                        {
-                            try
-                            {
-                                Console.Write("Id: ");
-                                int id = Int32.Parse(Console.ReadLine()!);
-
-                                foreach (var user in users)
-                                {
-                                    if (user.Id == id)
-                                    {
-                                        if(userActions.TryGetValue(user, out var action))
-                                        {
-                                            Console.WriteLine($"Action already performed: {action}\n");
-                                            isActionPerformed = true;
-                                            break;
-                                        }
-                                        userActions.Add(user, "Soft Delete");
-                                        isActionPerformed = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            catch (Exception ex) { Console.WriteLine("Enter correct data!"); }
-                        }
-                        
-                    }
-                    else if (Int32.Parse(answer) == 2)
-                    {
-                        Console.Write("Id: ");
-                        int id = Int32.Parse(Console.ReadLine()!);
-
-                        foreach (var user in users)
-                        {
-                            if(user.Id == id)
-                            {
-                                if (userActions.TryGetValue(user, out var action))
-                                    {
-                                        Console.WriteLine($"Action already performed: {action}\n");
-                                        break;
-                                    }
-                                    
-                                userActions.Add(user, "Hard Delete");
-                                break;
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex) { Console.WriteLine(ex.Message); Console.WriteLine(); }
-            }
+            return users;
         }
 
-        private static void ShowUsers(List<User> users)
+        public static bool IsEqual(KeyValuePair<User, string> item, string action)
         {
-            if (users.Count == 0)
-            {
-                Console.WriteLine("Users List Is Empty");
-            }
-
-            else
-            {
-                Console.WriteLine("Users List");
-                foreach (var user in users)
-                {
-                    Console.WriteLine(user);
-                }
-                Console.WriteLine();
-            }
+            return item.Value.Equals(action);
         }
 
-        private static void DoIt(List<User> users, Dictionary<User, string> userActions)
-        {
-            foreach(var item in userActions)
-            {
-               if(item.Value.Equals("Hard Delete"))
-                {
-                    users.Remove(item.Key);
-                }
+        delegate bool UserDelegate(KeyValuePair<User, string> val, string action);
 
-               else if(item.Value.Equals("Soft Delete"))
-                {
-                    item.Key.IsDeleted = true;
-                }
-            }
-        }
+        private static readonly UserDelegate userDelegate = IsEqual;
+
     }
-
 
 }

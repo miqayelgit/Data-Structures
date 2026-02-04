@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Data_Structures.Exercise
+namespace Data_Structures.Models
 {
     public class User
     {
@@ -20,9 +20,9 @@ namespace Data_Structures.Exercise
 
         public override string ToString()
         {
-            return $"[Id:{this.Id}, First Name:{this.Name}, " +
-                $"Last Name:{this.LastName}, Age:{this.Age}, " +
-                $"Email:{this.Email}, IsMarried:{this.IsMarried}, IsDeleted:{IsDeleted}]";
+            return $"[Id:{Id}, First Name:{Name}, " +
+                $"Last Name:{LastName}, Age:{Age}, " +
+                $"Email:{Email}, IsMarried:{IsMarried}, IsDeleted:{IsDeleted}]";
         }
     }
 }
